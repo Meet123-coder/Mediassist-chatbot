@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Healthcare Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .disclaimer {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 20px;
+            font-size: 0.8rem;
+            text-align: center;
+            border-bottom: 1px solid #ffeaa7;
+        }
+
+        #chatbox {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot {
+            background: white;
+            color: #333;
+            align-self: flex-start;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 20px;
+            border-bottom-left-radius: 5px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        #userInput:focus {
+            border-color: #667eea;
+        }
+
+        #sendButton {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #sendButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #clearButton {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: none;
+            white-space: nowrap;
+        }
+
+        #clearButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        #clearButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin: 10px 20px;
+            text-align: center;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin: 10px 20px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        .demo-notice {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 15px;
+            margin: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #bbdefb;
+            font-size: 0.9rem;
+        }
+
+        .demo-notice code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        @media (max-width: 600px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: none;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            .input-container {
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .button-group {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+            }
+            
+            #clearButton, #sendButton {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+                flex: 1;
+                max-width: 120px;
+            }
+            
+            #userInput {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🏥 AI Healthcare Assistant</h1>
+            <p>Powered by OpenAI GPT-3.5 Turbo</p>
+        </div>
+        
+        <div class="disclaimer">
+            ⚠️ This is an AI assistant for general health information only. Always consult healthcare professionals for medical advice.
+        </div>
+        
+        <div id="chatbox">
+            <div class="demo-notice">
+                🚀 <strong>MediAssist:</strong> “Your AI-powered healthcare companion, guiding you toward better health every day.”
+            </div>
+            <div class="message bot">
+                👋 Hello! I'm your AI healthcare assistant. I can help answer general health questions and provide health information. What would you like to know?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask me about your health..." autocomplete="off">
+            <div class="button-group">
+                <button id="clearButton" onclick="clearChat()" title="Clear chat (Ctrl+L)">🗑️ Clear</button>
+                <button id="sendButton" onclick="sendMessage()" title="Send message (Enter)">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const clearButton = document.getElementById('clearButton');
+        const chatbox = document.getElementById('chatbox');
+        const typingIndicator = document.getElementById('typingIndicator');
+        
+        // Track if there are messages to show clear button
+        let hasMessages = false;
+        let isDemoMode = true;
+
+        // Allow sending message with Enter key
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Add keyboard shortcut for clearing chat (Ctrl+L or Cmd+L)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+                e.preventDefault();
+                if (hasMessages) {
+                    clearChat();
+                }
+            }
+        });
+
+        // Auto-focus on input
+        userInput.focus();
+
+        // Check if Flask server is running
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('http://localhost:5000/health', {
+                    method: 'GET',
+                    timeout: 2000
+                });
+                if (response.ok) {
+                    isDemoMode = false;
+                    const demoNotice = document.querySelector('.demo-notice');
+                    if (demoNotice) {
+                        demoNotice.innerHTML = '✅ <strong>Full Mode:</strong> Connected to Flask server. AI-powered responses are active!';
+                        demoNotice.style.background = '#d4edda';
+                        demoNotice.style.color = '#155724';
+                        demoNotice.style.borderColor = '#c3e6cb';
+                    }
+                }
+            } catch (error) {
+                // Server not running, stay in demo mode
+                isDemoMode = true;
+            }
+        }
+
+        // Check server status on page load
+        checkServerStatus();
+
+        function showTyping() {
+            typingIndicator.style.display = 'block';
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            messageDiv.textContent = content;
+            chatbox.appendChild(messageDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+            
+            // Show clear button if we have messages
+            if (!hasMessages) {
+                hasMessages = true;
+                if (clearButton) {
+                    clearButton.style.display = 'block';
+                }
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `❌ ${message}`;
+            chatbox.appendChild(errorDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+            
+            // Auto-remove error after 5 seconds
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `✅ ${message}`;
+            chatbox.appendChild(successDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+            
+            // Auto-remove success message after 3 seconds
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.remove();
+                }
+            }, 3000);
+        }
+
+        function clearChat() {
+            // Show confirmation dialog
+            if (!confirm('Are you sure you want to clear the chat? This action cannot be undone.')) {
+                return;
+            }
+            
+            // Clear all messages except the welcome message
+            const messages = chatbox.querySelectorAll('.message');
+            messages.forEach(message => {
+                if (!message.textContent.includes('Hello! I\'m your AI healthcare assistant')) {
+                    message.remove();
+                }
+            });
+            
+            // Clear error and success messages
+            const errorMessages = chatbox.querySelectorAll('.error-message');
+            errorMessages.forEach(msg => msg.remove());
+            
+            const successMessages = chatbox.querySelectorAll('.success-message');
+            successMessages.forEach(msg => msg.remove());
+            
+            // Hide typing indicator if visible
+            hideTyping();
+            
+            // Hide clear button
+            if (clearButton) {
+                clearButton.style.display = 'none';
+            }
+            hasMessages = false;
+            
+            // Focus on input
+            userInput.focus();
+            
+            // Show confirmation
+            showSuccess('Chat cleared successfully!');
+        }
+
+        async function sendMessage() {
+            const userText = userInput.value.trim();
+            if (!userText) {
+                showError('Please enter a message before sending.');
+                return;
+            }
+
+            // Disable input and buttons
+            userInput.disabled = true;
+            sendButton.disabled = true;
+            if (clearButton) clearButton.disabled = true;
+            sendButton.innerHTML = '<div class="loading-spinner"></div>Sending...';
+
+            // Add user message
+            addMessage(userText, true);
+            userInput.value = '';
+
+            // Show typing indicator
+            showTyping();
+
+            try {
+                console.log('Sending message:', userText);
+                
+                const response = await fetch('http://localhost:5000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: userText })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                // Hide typing indicator
+                hideTyping();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.status === 'success' && data.reply) {
+                    console.log('Adding bot message:', data.reply);
+                    addMessage(data.reply);
+                    showSuccess('Message sent successfully!');
+                } else {
+                    console.error('Error in response:', data.error);
+                    showError(data.error || 'Sorry, I encountered an error. Please try again.');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('Error:', error);
+                
+                // Demo mode - show sample responses
+                if (isDemoMode || (error.name === 'TypeError' && error.message.includes('fetch'))) {
+                    // Simulate AI response for demo
+                    setTimeout(() => {
+                        hideTyping();
+                        
+                        // Generate contextual demo responses based on user input
+                        let demoResponse = "";
+                        const lowerText = userText.toLowerCase();
+                        
+                        if (lowerText.includes('headache') || lowerText.includes('head pain')) {
+                            demoResponse = "For headaches, try resting in a dark room, applying a cold compress, and staying hydrated. If headaches persist or are severe, consult a healthcare professional.";
+                        } else if (lowerText.includes('fever') || lowerText.includes('temperature')) {
+                            demoResponse = "For fever management, rest, stay hydrated, and monitor your temperature. If fever is high (>103°F) or persists, seek medical attention.";
+                        } else if (lowerText.includes('cold') || lowerText.includes('cough')) {
+                            demoResponse = "For cold symptoms, rest, drink fluids, use a humidifier, and consider over-the-counter remedies. If symptoms worsen, consult a doctor.";
+                        } else if (lowerText.includes('stomach') || lowerText.includes('nausea')) {
+                            demoResponse = "For stomach issues, try bland foods, stay hydrated, and avoid spicy or fatty foods. If symptoms are severe or persistent, seek medical advice.";
+                        } else if (lowerText.includes('sleep') || lowerText.includes('insomnia')) {
+                            demoResponse = "For better sleep, maintain a regular schedule, avoid screens before bed, and create a comfortable sleep environment. If sleep problems persist, consult a healthcare provider.";
+                        } else if (lowerText.includes('exercise') || lowerText.includes('fitness')) {
+                            demoResponse = "Regular exercise is important for health. Start slowly, choose activities you enjoy, and aim for at least 150 minutes of moderate activity per week.";
+                        } else if (lowerText.includes('diet') || lowerText.includes('nutrition')) {
+                            demoResponse = "A balanced diet with fruits, vegetables, lean proteins, and whole grains supports good health. Stay hydrated and limit processed foods.";
+                        } else if (lowerText.includes('stress') || lowerText.includes('anxiety')) {
+                            demoResponse = "For stress management, try deep breathing, meditation, regular exercise, and maintaining social connections. If stress becomes overwhelming, consider professional help.";
+                        } else if (lowerText.includes('malaria') || lowerText.includes('dengue') || lowerText.includes('typhoid')) {
+                            demoResponse = "For serious conditions like malaria, dengue, or typhoid, immediate medical attention is crucial. These conditions require proper diagnosis and treatment from healthcare professionals. Please consult a doctor right away.";
+                        } else if (lowerText.includes('diabetes') || lowerText.includes('blood sugar')) {
+                            demoResponse = "For diabetes management, monitor blood sugar levels regularly, follow a balanced diet, exercise regularly, and take medications as prescribed. Always consult your healthcare provider for personalized advice.";
+                        } else if (lowerText.includes('blood pressure') || lowerText.includes('hypertension')) {
+                            demoResponse = "For blood pressure management, maintain a low-sodium diet, exercise regularly, manage stress, limit alcohol, and take medications as prescribed. Regular monitoring and medical follow-up are important.";
+                        } else if (lowerText.includes('covid') || lowerText.includes('coronavirus')) {
+                            demoResponse = "For COVID-19 concerns, follow current health guidelines, practice good hygiene, wear masks when recommended, and get vaccinated. If you have symptoms, isolate and consult healthcare providers.";
+                        } else if (lowerText.includes('cancer') || lowerText.includes('tumor')) {
+                            demoResponse = "For cancer-related concerns, early detection and professional medical care are essential. Please consult with healthcare specialists for proper diagnosis, treatment options, and ongoing care.";
+                        } else if (lowerText.includes('heart') || lowerText.includes('cardiac')) {
+                            demoResponse = "For heart-related concerns, maintain a heart-healthy diet, exercise regularly, avoid smoking, manage stress, and monitor cholesterol. Any chest pain or heart symptoms require immediate medical attention.";
+                        } else if (lowerText.includes('pregnancy') || lowerText.includes('pregnant')) {
+                            demoResponse = "For pregnancy-related questions, regular prenatal care is essential. Follow your doctor's recommendations for nutrition, exercise, and medications. Always consult your obstetrician for personalized guidance.";
+                        } else if (lowerText.includes('allergy') || lowerText.includes('allergic')) {
+                            demoResponse = "For allergies, identify and avoid triggers, carry emergency medications if prescribed, and consider allergy testing. Severe allergic reactions require immediate medical attention.";
+                        } else if (lowerText.includes('skin') || lowerText.includes('rash') || lowerText.includes('acne')) {
+                            demoResponse = "For skin concerns, maintain good hygiene, use gentle cleansers, protect from sun exposure, and avoid picking at skin. Persistent or severe skin issues should be evaluated by a dermatologist.";
+                        } else if (lowerText.includes('back pain') || lowerText.includes('backache')) {
+                            demoResponse = "For back pain, try gentle stretching, apply heat or cold packs, maintain good posture, and avoid heavy lifting. If pain is severe or persistent, consult a healthcare provider.";
+                        } else if (lowerText.includes('joint pain') || lowerText.includes('arthritis')) {
+                            demoResponse = "For joint pain, gentle exercise, maintaining healthy weight, and anti-inflammatory foods can help. If pain is severe or affects daily activities, consult a healthcare provider.";
+                        } else if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('hey') || lowerText.includes('hii')) {
+                            demoResponse = "Hello! 👋 I'm your AI healthcare assistant. I can help with health questions, symptoms, wellness tips, and general medical information. What health topic would you like to discuss?";
+                        } else if (lowerText.includes('how are you') || lowerText.includes('how do you do')) {
+                            demoResponse = "I'm doing well, thank you for asking! I'm here and ready to help with any health-related questions you might have. What can I assist you with today?";
+                        } else if (lowerText.includes('what') && lowerText.includes('can you do')) {
+                            demoResponse = "I can help with various health topics including: symptom analysis, wellness advice, nutrition guidance, exercise tips, mental health support, and general medical information. Just ask me anything health-related!";
+                        } else if (lowerText.includes('help') || lowerText.includes('support')) {
+                            demoResponse = "I'm here to help! You can ask me about symptoms, health conditions, wellness tips, nutrition advice, exercise recommendations, or any other health-related questions. What would you like to know?";
+                        } else if (lowerText.includes('thank') || lowerText.includes('thanks')) {
+                            demoResponse = "You're very welcome! 😊 I'm happy to help with your health questions. Feel free to ask me anything else about health, wellness, or medical topics.";
+                        } else {
+                            // Try to provide a more helpful response based on common health keywords
+                            if (lowerText.includes('pain') || lowerText.includes('hurt') || lowerText.includes('ache')) {
+                                demoResponse = "For pain management, rest the affected area, apply heat or cold packs, and consider over-the-counter pain relievers. If pain is severe or persistent, please consult a healthcare provider for proper evaluation.";
+                            } else if (lowerText.includes('symptom') || lowerText.includes('feel') || lowerText.includes('sick')) {
+                                demoResponse = "I understand you're experiencing symptoms. It's important to monitor your symptoms and seek medical attention if they worsen or persist. For specific health concerns, please consult with a healthcare professional.";
+                            } else if (lowerText.includes('medicine') || lowerText.includes('medication') || lowerText.includes('drug')) {
+                                demoResponse = "For medication-related questions, always consult with your healthcare provider or pharmacist. They can provide guidance on proper usage, side effects, and interactions with other medications.";
+                            } else if (lowerText.includes('doctor') || lowerText.includes('hospital') || lowerText.includes('clinic')) {
+                                demoResponse = "For medical appointments and healthcare services, contact your local healthcare providers. They can provide proper diagnosis, treatment, and ongoing care for your health concerns.";
+                            } else {
+                                demoResponse = `I'd be happy to help with your health question about "${userText}". Could you provide more specific details about your symptoms or health concern? This will help me give you more targeted advice.`;
+                            }
+                        }
+                        
+                        addMessage(demoResponse);
+                        showSuccess('Demo Mode: This is a sample response. Run the full app for AI-powered answers!');
+                    }, 2000);
+                } else if (error.message.includes('HTTP error')) {
+                    showError('Server error. Please make sure the Flask server is running.');
+                } else {
+                    showError('An unexpected error occurred. Please try again.');
+                }
+            } finally {
+                // Re-enable input and buttons
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                if (clearButton) clearButton.disabled = false;
+                sendButton.innerHTML = 'Send';
+                userInput.focus();
+            }
+        }
+    </script>
+</body>
+</html>

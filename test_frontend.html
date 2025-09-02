@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend</title>
+</head>
+<body>
+    <h1>Frontend Test</h1>
+    <p>Testing if the Flask app is accessible:</p>
+    
+    <button onclick="testHealth()">Test Health Endpoint</button>
+    <button onclick="testChat()">Test Chat Endpoint</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function testHealth() {
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = 
+                    '<h3>Health Test Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = 
+                    '<h3>Health Test Error:</h3><p>' + error.message + '</p>';
+            }
+        }
+        
+        async function testChat() {
+            try {
+                const response = await fetch('http://localhost:5000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: 'Hello, test message' })
+                });
+                const data = await response.json();
+                document.getElementById('results').innerHTML = 
+                    '<h3>Chat Test Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = 
+                    '<h3>Chat Test Error:</h3><p>' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
